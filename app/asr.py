@@ -1,9 +1,18 @@
-"""SenseVoice-Small ONNX 推理封装。依赖延迟导入，内网开发机可安全 import 本模块。"""
+"""SenseVoice-Small ONNX 推理封装。依赖延迟导入，内网开发机可安全 import 本模块。
+
+文件名与调用签名依据 funasr-onnx 0.4.2 的 sensevoice_bin.py 源码：
+- quantize=True 加载 model_quant.onnx；分词器 chn_jpn_yue_eng_ko_spectok.bpe.model；
+  另需 config.yaml 与 am.mvn。
+- 调用 model(audio, language="auto", textnorm="withitn")，audio 为 float32 [-1,1] 波形；
+  返回 list[str]；识别文本可能带 <|zh|><|NEUTRAL|> 等富文本标签，需清除。
+"""
 from __future__ import annotations
 
 REQUIRED_FILES = (
-    "model.integer.onnx",
-    "chn_jpn_yue_eng_ko_spectok.bpe.txt",
+    "model_quant.onnx",
+    "chn_jpn_yue_eng_ko_spectok.bpe.model",
+    "config.yaml",
+    "am.mvn",
 )
 
 
@@ -43,8 +52,11 @@ class ASREngine:
         return cls(model, np)
 
     def transcribe(self, pcm: bytes) -> str:
+        import re
+
         audio = self._np.frombuffer(pcm, dtype=self._np.int16).astype(self._np.float32) / 32768.0
-        result = self._model(audio, fs=16000, language="auto", use_itn=True)
+        result = self._model(audio, language="auto", textnorm="withitn")
         if isinstance(result, list):
             result = result[0] if result else ""
-        return str(result).strip()
+        text = re.sub(r"<\|[^|]*\|>", "", str(result))
+        return text.strip()
