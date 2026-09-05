@@ -1,0 +1,9 @@
+funasr-onnx
+onnxruntime
+keyboard
+sounddevice
+numpy
+pyyaml
+pytest
+modelscope
+conda-pack
