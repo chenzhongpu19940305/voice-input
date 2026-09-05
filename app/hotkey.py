@@ -25,6 +25,34 @@ class HotkeyMatcher:
         return all(self._is_pressed(m) for m in self._mods)
 
 
+def make_event_handler(keys, on_press, on_release, is_pressed):
+    """构造 keyboard 事件回调：armed 状态机 + 拦截决策（可测纯逻辑）。"""
+    matcher = HotkeyMatcher(keys[:-1], keys[-1], is_pressed)
+    armed = False
+
+    def on_event(event):
+        nonlocal armed
+        if event.name != keys[-1]:
+            return True
+        if event.event_type == "down":
+            if armed:
+                return False  # 拦截 auto-repeat 与修饰键已松开的持续 down
+            if matcher.matches(event.name):
+                armed = True
+                on_press()
+                return False
+            return True  # 无修饰键的普通空格（正常打字）放行
+        if event.event_type == "up":
+            if armed:
+                armed = False
+                on_release()
+                return False
+            return True
+        return True
+
+    return on_event
+
+
 def register_push_to_talk(hotkey_str: str, on_press: Callable[[], None],
                           on_release: Callable[[], None]) -> None:
     """注册按住式全局热键并阻塞监听（keyboard 库，Windows）。
@@ -36,22 +64,6 @@ def register_push_to_talk(hotkey_str: str, on_press: Callable[[], None],
     import keyboard  # 延迟导入：内网开发机无此库
 
     keys = parse_hotkey(hotkey_str)
-    matcher = HotkeyMatcher(keys[:-1], keys[-1], keyboard.is_pressed)
-    armed = False
-
-    def on_event(event):
-        nonlocal armed
-        if event.name != keys[-1]:
-            return True
-        if event.event_type == "down" and not armed and matcher.matches(event.name):
-            armed = True
-            on_press()
-            return False
-        if event.event_type == "up" and armed:
-            armed = False
-            on_release()
-            return False
-        return True
-
+    on_event = make_event_handler(keys, on_press, on_release, keyboard.is_pressed)
     keyboard.hook(on_event, suppress=True)
     keyboard.wait()  # 阻塞直到进程退出
