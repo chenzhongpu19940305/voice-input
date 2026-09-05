@@ -28,16 +28,16 @@ if ($LASTEXITCODE -ne 0) { Pop-Location; throw "单元测试未通过" }
 Pop-Location
 
 Write-Host "[5/6] conda-pack 导出 runtime.zip…"
-& $pyExe -m conda_pack -n $envName -o (Join-Path $PSScriptRoot "runtime.zip") --force
+& $pyExe -m conda_pack -n $envName -o (Join-Path $env:TEMP "vi-runtime.zip") --force
 if ($LASTEXITCODE -ne 0) { throw "conda-pack 失败" }
 
 Write-Host "[6/6] 组装离线包…"
 $dist = Join-Path $PSScriptRoot "dist"
 if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
 New-Item -ItemType Directory -Path $dist | Out-Null
-# stage 必须在项目树之外：$items 含 build\，若 stage 在 build\ 内会把
-# runtime.zip（Step 5 产物）再拷一份进 stage\build\，导致离线包体积翻倍。
-$stage = Join-Path $env:TEMP "vi-stage"
+# stage 放在项目树之外的 TEMP：runtime.zip 已在 TEMP 产出（不随 build\ 拷入），
+# stage 置于 TEMP 可避免"目录拷进自身子树"的嵌套拷贝问题与项目树残留。
+$stage = Join-Path $env:TEMP "voice-input"
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory -Path $stage | Out-Null
 
@@ -49,12 +49,12 @@ foreach ($item in $items) {
 Copy-Item (Join-Path $projectRoot "install.bat") -Destination $stage -ErrorAction SilentlyContinue
 Copy-Item (Join-Path $projectRoot "README.md") -Destination $stage -ErrorAction SilentlyContinue
 Copy-Item (Join-Path $projectRoot "models") -Destination $stage -Recurse
-Copy-Item (Join-Path $PSScriptRoot "runtime.zip") -Destination $stage
+Copy-Item (Join-Path $env:TEMP "vi-runtime.zip") -Destination $stage
 
 $zip = Join-Path $dist ("voice-input-offline-{0}.zip" -f (Get-Date -Format "yyyyMMdd"))
 Compress-Archive -Path $stage -DestinationPath $zip -Force
 Remove-Item $stage -Recurse -Force
-Remove-Item (Join-Path $PSScriptRoot "runtime.zip") -Force
+Remove-Item (Join-Path $env:TEMP "vi-runtime.zip") -Force
 
 Write-Host "完成: $zip"
 Write-Host "请将此 zip 拷贝到公司电脑并解压，运行 install.bat。"
