@@ -12,7 +12,8 @@ if not exist runtime.zip (
 if exist runtime\ (
     echo        runtime\ 已存在，跳过解压。如需重装请先删除 runtime\ 目录
 ) else (
-    tar -xf runtime.zip
+    if not exist runtime mkdir runtime
+    tar -xf runtime.zip -C runtime
     if errorlevel 1 (
         echo [错误] 解压失败
         pause
@@ -44,6 +45,9 @@ if /i "%AUTOSTART%"=="y" (
 
 echo [4/4] 运行单元测试自检…
 runtime\python.exe -m unittest discover -s tests -v
+if errorlevel 1 (
+    echo [警告] 单元测试未通过，安装可能不完整，请检查上方输出
+)
 
 echo.
 echo 安装完成。请先运行自检验证麦克风与模型：

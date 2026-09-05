@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import threading
+import traceback
 
 from .config import Config
 from .recorder import audio_duration_seconds
@@ -48,6 +49,7 @@ class VoicePipeline:
                 self._beep("start")
             self._recorder.start()
         except Exception:
+            traceback.print_exc()
             with self._lock:
                 self._state = "idle"
             if self._config.beep:
@@ -73,10 +75,11 @@ class VoicePipeline:
             self._clipboard_set(text)
             if self._config.auto_paste:
                 self._paste()
-            if self._config.restore_clipboard:
+            if self._config.auto_paste and self._config.restore_clipboard:
                 self._restore(original)
             self._beep("done") if self._config.beep else None
         except Exception:
+            traceback.print_exc()
             self._beep("error") if self._config.beep else None
         finally:
             with self._lock:

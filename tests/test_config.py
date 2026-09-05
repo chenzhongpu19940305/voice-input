@@ -71,6 +71,14 @@ class TestLoadConfig(unittest.TestCase):
             with self.assertRaises(ConfigError):
                 load_config(p)
 
+    def test_bool_for_float_field_raises(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "config.yaml")
+            with open(p, "w", encoding="utf-8") as f:
+                f.write("restore_delay_sec: no\n")
+            with self.assertRaises(ConfigError):
+                load_config(p)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -49,7 +49,7 @@ def load_config(path: str) -> Config:
     for key, typ in _FIELD_TYPES.items():
         if key in raw and raw[key] is not None:
             value = raw[key]
-            if typ is float and isinstance(value, int):
+            if typ is float and isinstance(value, int) and not isinstance(value, bool):
                 value = float(value)
             if not isinstance(value, typ) or isinstance(value, bool) != (typ is bool):
                 raise ConfigError(

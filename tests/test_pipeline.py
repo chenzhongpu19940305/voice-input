@@ -79,7 +79,14 @@ class TestNormalFlow(unittest.TestCase):
         h.pipe.on_release()
         self.assertEqual(h.events["sets"], ["识别文本"])
         self.assertEqual(h.events["pastes"], 0)
-        self.assertEqual(h.events["restores"], ["旧剪贴板"])
+        self.assertEqual(h.events["restores"], [])
+
+    def test_restore_requires_auto_paste(self):
+        h = Harness(config=Config(auto_paste=False, restore_clipboard=True))
+        h.pipe.on_press()
+        h.pipe.on_release()
+        self.assertEqual(h.events["sets"], ["识别文本"])
+        self.assertEqual(h.events["restores"], [])
 
     def test_restore_off(self):
         h = Harness(config=Config(restore_clipboard=False))
