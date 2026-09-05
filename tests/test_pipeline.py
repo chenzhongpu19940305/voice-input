@@ -141,6 +141,24 @@ class TestEdgeCases(unittest.TestCase):
         h.pipe.on_press()
         self.assertEqual(h.pipe.state, "recording")
 
+    def test_press_start_failure_recovers_to_idle(self):
+        class BoomRecorder:
+            started = 0
+
+            def start(self):
+                raise OSError("mic unavailable")
+
+            def stop(self):
+                return b"\x00" * 32000
+
+        h = Harness(recorder=BoomRecorder())
+        h.pipe.on_press()  # 不应抛出
+        self.assertEqual(h.pipe.state, "idle")
+        self.assertEqual(h.events["beeps"], ["start", "error"])
+        # 状态已回 idle，可再次触发（不卡死）
+        h.pipe.on_release()  # 无效果不崩溃
+        self.assertEqual(h.pipe.state, "idle")
+
     def test_release_without_press_noop(self):
         h = Harness()
         h.pipe.on_release()

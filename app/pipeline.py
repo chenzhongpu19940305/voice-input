@@ -43,8 +43,15 @@ class VoicePipeline:
             if self._state != "idle":
                 return
             self._state = "recording"
-        self._beep("start") if self._config.beep else None
-        self._recorder.start()
+        try:
+            if self._config.beep:
+                self._beep("start")
+            self._recorder.start()
+        except Exception:
+            with self._lock:
+                self._state = "idle"
+            if self._config.beep:
+                self._beep("error")
 
     def on_release(self) -> None:
         with self._lock:
