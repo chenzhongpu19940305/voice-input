@@ -49,7 +49,7 @@ foreach ($item in $items) {
 Copy-Item (Join-Path $projectRoot "install.bat") -Destination $stage -ErrorAction SilentlyContinue
 Copy-Item (Join-Path $projectRoot "README.md") -Destination $stage -ErrorAction SilentlyContinue
 Copy-Item (Join-Path $projectRoot "models") -Destination $stage -Recurse
-Copy-Item (Join-Path $env:TEMP "vi-runtime.zip") -Destination $stage
+Copy-Item (Join-Path $env:TEMP "vi-runtime.zip") -Destination (Join-Path $stage "runtime.zip")
 
 $zip = Join-Path $dist ("voice-input-offline-{0}.zip" -f (Get-Date -Format "yyyyMMdd"))
 Compress-Archive -Path $stage -DestinationPath $zip -Force
