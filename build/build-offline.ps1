@@ -5,7 +5,9 @@ $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $envName = "vi-build"
-$pipMirror = "https://pypi.tuna.tsinghua.edu.cn/simple"
+# pip 镜像：默认上海交大镜像（funasr-onnx 官方推荐，清华镜像缺此包）。
+# 如有更快的源，可用环境变量覆盖：$env:VI_PIP_INDEX = "https://pypi.org/simple"
+$pipMirror = if ($env:VI_PIP_INDEX) { $env:VI_PIP_INDEX } else { "https://mirror.sjtu.edu.cn/pypi/web/simple" }
 
 Write-Host "[1/6] 创建 conda 环境 $envName (python=3.10)…"
 conda create -n $envName python=3.10 -y
