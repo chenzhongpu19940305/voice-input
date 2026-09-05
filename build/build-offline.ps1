@@ -38,13 +38,15 @@ if ($LASTEXITCODE -ne 0) { throw "torch 安装失败" }
 if ($LASTEXITCODE -ne 0) { throw "funasr 安装失败" }
 
 Write-Host "[4/7] 下载并导出 SenseVoice ONNX 模型（下载 936MB + 导出，耗时较长）…"
-$exportScript = @'
+# 注意：PS5.1 给 python -c 传多行代码会被参数转义破坏，必须写临时 .py 文件执行
+$exportPy = Join-Path $env:TEMP "vi_export_onnx.py"
+@'
 from funasr import AutoModel
 model = AutoModel(model="iic/SenseVoiceSmall", device="cpu")
 out = model.export(type="onnx", quantize=True)
-print("EXPORT_DIR:" + out)
-'@
-& $pyExport -c $exportScript 2>&1 | Tee-Object -Variable exportLog | Out-Null
+print("EXPORT_DIR:" + str(out))
+'@ | Out-File -FilePath $exportPy -Encoding utf8
+& $pyExport $exportPy 2>&1 | Tee-Object -Variable exportLog | Out-Null
 $match = ($exportLog | Select-String -Pattern "EXPORT_DIR:(.+)" | Select-Object -First 1)
 if (-not $match) { throw "onnx 导出失败，请检查上方输出" }
 $exportDir = $match.Matches.Groups[1].Value.Trim()
