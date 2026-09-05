@@ -1,4 +1,4 @@
-# voice-input 离线包构建脚本 —— 在能上网的 Windows 电脑上运行。
+﻿# voice-input 离线包构建脚本 —— 在能上网的 Windows 电脑上运行。
 # 前置：已安装 miniconda 并在 PATH 中；本脚本同目录的上级为项目根（含 app\ 等）。
 # 产出: <项目根>\build\dist\voice-input-offline-<日期>.zip
 # 说明: ModelScope 无现成 ONNX 版 SenseVoice，需用 funasr(torch) 从 PyTorch 版导出；
