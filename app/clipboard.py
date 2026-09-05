@@ -16,6 +16,8 @@ kernel32.GlobalAlloc.argtypes = [wintypes.UINT, ctypes.c_size_t]
 kernel32.GlobalLock.restype = ctypes.c_void_p
 kernel32.GlobalLock.argtypes = [wintypes.HGLOBAL]
 kernel32.GlobalUnlock.argtypes = [wintypes.HGLOBAL]
+kernel32.GlobalFree.restype = wintypes.HGLOBAL
+kernel32.GlobalFree.argtypes = [wintypes.HGLOBAL]
 user32.OpenClipboard.argtypes = [wintypes.HWND]
 user32.GetClipboardData.restype = wintypes.HANDLE
 user32.GetClipboardData.argtypes = [wintypes.UINT]
@@ -70,12 +72,14 @@ def set_clipboard_text(text: str) -> None:
             raise MemoryError("GlobalAlloc 失败")
         ptr = kernel32.GlobalLock(handle)
         if not ptr:
+            kernel32.GlobalFree(handle)
             raise MemoryError("GlobalLock 失败")
         try:
             ctypes.memmove(ptr, data, len(data))
         finally:
             kernel32.GlobalUnlock(handle)
         if not user32.SetClipboardData(_CF_UNICODETEXT, handle):
+            kernel32.GlobalFree(handle)
             raise CLIPBOARD_UNAVAILABLE("SetClipboardData 失败")
 
 

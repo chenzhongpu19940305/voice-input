@@ -38,6 +38,29 @@ class TestClipboardRoundTrip(unittest.TestCase):
         timer.join(timeout=2)
         self.assertEqual(clipboard.get_clipboard_text(), "识别结果")
 
+    def test_set_failure_frees_handle(self):
+        import ctypes
+        from unittest import mock
+
+        calls = []
+
+        def fake_set_data(fmt, handle):
+            calls.append(("set", handle))
+            return 0  # 模拟 SetClipboardData 失败
+
+        orig = clipboard.user32.SetClipboardData
+        orig_free = clipboard.kernel32.GlobalFree
+        clipboard.user32.SetClipboardData = fake_set_data
+        clipboard.kernel32.GlobalFree = lambda h: calls.append(("free", h)) or 0
+        try:
+            with self.assertRaises(clipboard.CLIPBOARD_UNAVAILABLE):
+                clipboard.set_clipboard_text("泄漏检查")
+        finally:
+            clipboard.user32.SetClipboardData = orig
+            clipboard.kernel32.GlobalFree = orig_free
+        frees = [c for c in calls if c[0] == "free"]
+        self.assertEqual(len(frees), 1, "SetClipboardData 失败后必须 GlobalFree 恰好一次")
+
 
 if __name__ == "__main__":
     unittest.main()
