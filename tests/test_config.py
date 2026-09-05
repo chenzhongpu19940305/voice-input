@@ -63,6 +63,14 @@ class TestLoadConfig(unittest.TestCase):
             with self.assertRaises(ConfigError):
                 load_config(p)
 
+    def test_gbk_file_raises_config_error(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "config.yaml")
+            with open(p, "wb") as f:
+                f.write("hotkey: 中文热键\n".encode("gbk"))
+            with self.assertRaises(ConfigError):
+                load_config(p)
+
 
 if __name__ == "__main__":
     unittest.main()

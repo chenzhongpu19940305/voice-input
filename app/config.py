@@ -41,6 +41,8 @@ def load_config(path: str) -> Config:
             raw = yaml.safe_load(f) or {}
     except yaml.YAMLError as exc:
         raise ConfigError(f"config.yaml 语法错误: {exc}") from exc
+    except UnicodeDecodeError as exc:
+        raise ConfigError(f"config.yaml 必须以 UTF-8 编码保存: {exc}") from exc
     if not isinstance(raw, dict):
         raise ConfigError("config.yaml 顶层必须是键值映射")
     values = {}
