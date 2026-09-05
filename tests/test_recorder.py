@@ -56,6 +56,34 @@ class TestBuffer(unittest.TestCase):
         rec._on_data(_FakeChunk(b"\x01\x02"), 1, None, None)
         self.assertEqual(rec._drain(), b"")
 
+    def test_start_failure_rolls_back_state(self):
+        import sys
+        import types
+
+        fake_sd = types.ModuleType("sounddevice")
+
+        class BoomStream:
+            def __init__(self, **kw):
+                pass
+
+            def start(self):
+                raise OSError("no device")
+
+            def close(self):
+                pass
+
+        fake_sd.InputStream = BoomStream
+        sys.modules["sounddevice"] = fake_sd
+        try:
+            rec = MicRecorder()
+            with self.assertRaises(OSError):
+                rec.start()
+            self.assertFalse(rec.recording)
+            self.assertIsNone(rec._stream)
+            # 回滚后可再次尝试 start（不会因坏状态卡死）
+        finally:
+            del sys.modules["sounddevice"]
+
 
 if __name__ == "__main__":
     unittest.main()

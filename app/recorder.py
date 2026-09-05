@@ -28,25 +28,35 @@ class MicRecorder:
             return
         import sounddevice as sd  # 延迟导入：内网开发机无此库
 
-        with self._lock:
-            self._buffer = bytearray()
-        self._stream = sd.InputStream(
+        stream = sd.InputStream(
             samplerate=self._sample_rate,
             channels=1,
             dtype="int16",
             callback=self._on_data,
         )
-        self._stream.start()
-        self._recording = True
+        with self._lock:
+            self._buffer = bytearray()
+        self._stream = stream
+        self._recording = True  # 先置 flag 再 start，回调线程启动后即开始采集
+        try:
+            stream.start()
+        except Exception:
+            self._stream = None
+            self._recording = False
+            try:
+                stream.close()
+            except Exception:
+                pass
+            raise
 
     def stop(self) -> bytes:
         if not self._recording:
             raise RuntimeError("stop() 在未 start() 时调用")
         stream, self._stream = self._stream, None
-        self._recording = False
         if stream is not None:
-            stream.stop()
+            stream.stop()  # close 返回后回调线程不再触发
             stream.close()
+        self._recording = False  # 最后翻 flag：stop/close 期间到达的尾部回调仍被记录
         return self._drain()
 
     def _on_data(self, indata, frames, time_info, status) -> None:
