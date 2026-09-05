@@ -35,7 +35,10 @@ Write-Host "[6/6] 组装离线包…"
 $dist = Join-Path $PSScriptRoot "dist"
 if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
 New-Item -ItemType Directory -Path $dist | Out-Null
-$stage = Join-Path $dist "voice-input"
+# stage 必须在项目树之外：$items 含 build\，若 stage 在 build\ 内会把
+# runtime.zip（Step 5 产物）再拷一份进 stage\build\，导致离线包体积翻倍。
+$stage = Join-Path $env:TEMP "vi-stage"
+if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory -Path $stage | Out-Null
 
 $items = @("app", "tests", "build", "config.yaml", "terms.yaml",
