@@ -5,15 +5,15 @@ $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $envName = "vi-build"
-# pip 镜像：默认上海交大镜像（funasr-onnx 官方推荐，清华镜像缺此包）。
-# 如有更快的源，可用环境变量覆盖：$env:VI_PIP_INDEX = "https://pypi.org/simple"
-$pipMirror = if ($env:VI_PIP_INDEX) { $env:VI_PIP_INDEX } else { "https://mirror.sjtu.edu.cn/pypi/web/simple" }
+# pip 源：默认官方 PyPI。国内镜像（清华/交大）对 funasr-onnx 包文件 403，不可用。
+# 如需其他源，可用环境变量覆盖：$env:VI_PIP_INDEX = "https://pypi.tuna.tsinghua.edu.cn/simple"
+$pipMirror = if ($env:VI_PIP_INDEX) { $env:VI_PIP_INDEX } else { "https://pypi.org/simple" }
 
 Write-Host "[1/6] 创建 conda 环境 $envName (python=3.10)…"
 conda create -n $envName python=3.10 -y
 if ($LASTEXITCODE -ne 0) { throw "conda create 失败" }
 
-Write-Host "[2/6] 安装依赖（清华镜像）…"
+Write-Host "[2/6] 安装依赖（$pipMirror）…"
 $pyExe = Join-Path (conda info --base) "envs\$envName\python.exe"
 & $pyExe -m pip install -i $pipMirror -r (Join-Path $PSScriptRoot "packages.txt")
 if ($LASTEXITCODE -ne 0) { throw "pip install 失败" }
