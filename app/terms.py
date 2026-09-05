@@ -27,6 +27,10 @@ def load_terms(path: str) -> list[TermRule]:
             raw = yaml.safe_load(f) or {}
     except yaml.YAMLError as exc:
         raise TermsError(f"terms.yaml 语法错误: {exc}") from exc
+    except UnicodeDecodeError as exc:
+        raise TermsError(f"terms.yaml 必须以 UTF-8 编码保存: {exc}") from exc
+    if not isinstance(raw, dict):
+        raise TermsError("terms.yaml 顶层必须是键值映射")
     entries = raw.get("rules") or []
     rules: list[TermRule] = []
     for i, entry in enumerate(entries):

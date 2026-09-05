@@ -46,6 +46,22 @@ class TestLoadTerms(unittest.TestCase):
             with self.assertRaises(TermsError):
                 load_terms(p)
 
+    def test_gbk_file_raises_terms_error(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "terms.yaml")
+            with open(p, "wb") as f:
+                f.write("rules:\n  - pattern: 中文\n".encode("gbk"))
+            with self.assertRaises(TermsError):
+                load_terms(p)
+
+    def test_non_mapping_top_level_raises_terms_error(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "terms.yaml")
+            with open(p, "w", encoding="utf-8") as f:
+                f.write("- just\n- a list\n")
+            with self.assertRaises(TermsError):
+                load_terms(p)
+
 
 class TestApplyTerms(unittest.TestCase):
     def test_no_rules_passthrough(self):
