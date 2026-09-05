@@ -1,0 +1,8 @@
+# voice-input 配置。热键格式见 README；修改后重启生效。
+hotkey: ctrl+shift+space
+auto_paste: true          # false 时仅写剪贴板，不模拟 Ctrl+V
+restore_clipboard: true   # 粘贴后恢复原剪贴板文本
+restore_delay_sec: 1.5
+beep: true
+min_duration_ms: 300      # 短于该时长的按住视为误触
+sample_rate: 16000

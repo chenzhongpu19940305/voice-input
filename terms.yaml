@@ -1,0 +1,17 @@
+# 术语纠正表：按顺序替换，先匹配先得。regex: true 时 pattern 为正则。
+rules:
+  - pattern: 斯布林
+    replacement: Spring
+  - pattern: 买八提寺
+    replacement: MyBatis
+  - pattern: 斯波瑞特
+    replacement: Spirit
+  - pattern: 迈文克
+    replacement: Maven
+  - pattern: 格拉德
+    replacement: Gradle
+  - pattern: 道克
+    replacement: Docker
+  - pattern: (?i)open\s*code\s*desktop
+    replacement: OpenCode Desktop
+    regex: true
