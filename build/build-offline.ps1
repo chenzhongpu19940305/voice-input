@@ -74,7 +74,10 @@ if ($LASTEXITCODE -ne 0) { Pop-Location; throw "单元测试未通过" }
 Pop-Location
 
 Write-Host "[6/7] conda-pack 导出 runtime.zip…"
-& $pyExe -m conda_pack -n $envName -o (Join-Path $env:TEMP "vi-runtime.zip") --force
+# conda-pack 无 __main__，不能用 python -m，须用其 exe（装在 vi-build 的 Scripts 下）
+$packExe = Join-Path (conda info --base) "envs\$envName\Scripts\conda-pack.exe"
+if (-not (Test-Path $packExe)) { throw "未找到 $packExe" }
+& $packExe -n $envName -o (Join-Path $env:TEMP "vi-runtime.zip") --force
 if ($LASTEXITCODE -ne 0) { throw "conda-pack 失败" }
 
 Write-Host "[7/7] 组装离线包…"
