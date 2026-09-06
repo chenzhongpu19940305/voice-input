@@ -34,7 +34,7 @@ Ensure-CondaEnv $envExport
 $pyExport = Join-Path (conda info --base) "envs\$envExport\python.exe"
 & $pyExport -m pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
 if ($LASTEXITCODE -ne 0) { throw "torch 安装失败" }
-& $pyExport -m pip install -i $pipMirror funasr
+& $pyExport -m pip install -i $pipMirror funasr onnxscript
 if ($LASTEXITCODE -ne 0) { throw "funasr 安装失败" }
 
 Write-Host "[4/7] 下载并导出 SenseVoice ONNX 模型（下载 936MB + 导出，耗时较长）…"
