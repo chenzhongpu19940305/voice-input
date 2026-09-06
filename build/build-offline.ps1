@@ -38,7 +38,9 @@ if ($LASTEXITCODE -ne 0) { throw "torch 安装失败" }
 if ($LASTEXITCODE -ne 0) { throw "funasr 安装失败" }
 
 Write-Host "[4/7] 下载并导出 SenseVoice ONNX 模型（下载 936MB + 导出，耗时较长）…"
-# 注意：PS5.1 给 python -c 传多行代码会被参数转义破坏，必须写临时 .py 文件执行
+# 注意1：PS5.1 给 python -c 传多行代码会被参数转义破坏 → 写临时 .py 文件
+# 注意2：2>&1 会把 python 的 stderr 日志包装成 ErrorRecord（EAP=Stop 下直接终止脚本）
+#        → 用 Start-Process 把 stdout/stderr 重定向到文件，事后按退出码判断
 $exportPy = Join-Path $env:TEMP "vi_export_onnx.py"
 @'
 from funasr import AutoModel
@@ -46,9 +48,17 @@ model = AutoModel(model="iic/SenseVoiceSmall", device="cpu")
 out = model.export(type="onnx", quantize=True)
 print("EXPORT_DIR:" + str(out))
 '@ | Out-File -FilePath $exportPy -Encoding utf8
-& $pyExport $exportPy 2>&1 | Tee-Object -Variable exportLog | Out-Null
-$match = ($exportLog | Select-String -Pattern "EXPORT_DIR:(.+)" | Select-Object -First 1)
-if (-not $match) { throw "onnx 导出失败，请检查上方输出" }
+$outLog = Join-Path $env:TEMP "vi-export-out.txt"
+$errLog = Join-Path $env:TEMP "vi-export-err.txt"
+Write-Host "      进度日志: $errLog （另开 PowerShell 窗口可实时查看：Get-Content 该文件 -Wait -Tail 20）"
+$proc = Start-Process -FilePath $pyExport -ArgumentList ('"{0}"' -f $exportPy) -NoNewWindow -Wait -PassThru -RedirectStandardOutput $outLog -RedirectStandardError $errLog
+if ($proc.ExitCode -ne 0) {
+    Write-Host "------ 导出失败，stderr 最后 40 行 ------"
+    Get-Content $errLog -Tail 40 | Write-Host
+    throw "onnx 导出失败（退出码 $($proc.ExitCode)）"
+}
+$match = (Select-String -Path $outLog -Pattern "EXPORT_DIR:(.+)" | Select-Object -First 1)
+if (-not $match) { throw "onnx 导出未返回目录，请查看 $outLog" }
 $exportDir = $match.Matches.Groups[1].Value.Trim()
 $modelDir = Join-Path $projectRoot "models\sensevoice"
 New-Item -ItemType Directory -Path $modelDir -Force | Out-Null
